@@ -185,6 +185,36 @@ function doPost(e) {
 }
 
 /**
+ * ONE-TIME SETUP: run this function manually from the Apps Script editor
+ * to authorize the "external_request" scope needed for GitHub commits.
+ *
+ *   1. In Apps Script, open the function dropdown (top toolbar)
+ *   2. Select "authorizeAuditTrail"
+ *   3. Click Run
+ *   4. Google will prompt for permissions — allow "See, edit, create, and
+ *      delete... websites" (this is the external-request scope)
+ *   5. After the prompt, run it one more time and check the Execution log
+ *      (View → Executions) — you should see a line like
+ *      "Audit connection test OK — test commit sha = abc123..."
+ *
+ * Once authorized, the main doPost flow will silently succeed every time.
+ */
+function authorizeAuditTrail() {
+  const result = commitToGitHub_(-1, {_authorization_test: new Date().toISOString()});
+  Logger.log('Audit connection test: ' + JSON.stringify(result));
+  if (result.ok) {
+    SpreadsheetApp.getActiveSpreadsheet()
+      .toast('Audit trail authorized. Commit SHA: ' + result.commit.substring(0, 7),
+             'Setup complete', 8);
+  } else {
+    SpreadsheetApp.getActiveSpreadsheet()
+      .toast('Audit failed: ' + result.reason, 'Setup FAILED', 15);
+  }
+  return result;
+}
+
+
+/**
  * GET on the web-app URL returns a status page. Useful for verifying the
  * backend is alive without submitting a full form.
  */
