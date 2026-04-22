@@ -38,7 +38,80 @@
  */
 
 /**
- * Accept a POST with form fields. Appends one row to the active sheet.
+ * ═══════════════════════════════════════════════════════════════════════
+ * AUDIT TRAIL — after appending to the Sheet, also commit one JSON file
+ * per submission to a separate GitHub repository. Each commit is
+ * cryptographically chained + GitHub-timestamped, so the repo is an
+ * immutable append-only log. See shs-hum-epfl/shs-form-data for docs.
+ *
+ * Configured via Script Properties (Project Settings → Script Properties):
+ *   GITHUB_PAT        — fine-grained personal access token with
+ *                       "Contents: write" scope on the data repo only.
+ *   GITHUB_REPO       — owner/repo, e.g. "shs-hum-epfl/shs-form-data"
+ *                       (optional; defaults to this value below).
+ *
+ * If GITHUB_PAT is missing or the request fails, the submission is STILL
+ * written to the Sheet (best effort — participant experience unaffected).
+ * Failures are logged to Apps Script's built-in execution log.
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+function commitToGitHub_(rowNumber, params) {
+  const props = PropertiesService.getScriptProperties();
+  const pat = props.getProperty('GITHUB_PAT');
+  if (!pat) {
+    Logger.log('GITHUB_PAT not set — skipping audit-trail commit.');
+    return {ok: false, reason: 'no PAT'};
+  }
+  const repo = props.getProperty('GITHUB_REPO') || 'shs-hum-epfl/shs-form-data';
+
+  // File path: submissions/2026-04-22T14-15-23Z_row002.json
+  const now = new Date();
+  const safeTs = now.toISOString().replace(/:/g, '-').replace(/\.\d+Z$/, 'Z');
+  const path = 'submissions/' + safeTs + '_row' +
+               String(rowNumber).padStart(3, '0') + '.json';
+
+  const payload = {
+    commit_timestamp: now.toISOString(),
+    sheet_row: rowNumber,
+    response: params
+  };
+
+  const body = {
+    message: 'Submission row ' + rowNumber + ' at ' + now.toISOString(),
+    content: Utilities.base64Encode(JSON.stringify(payload, null, 2)),
+    branch: 'main'
+  };
+
+  const opts = {
+    method: 'put',
+    headers: {
+      'Authorization': 'Bearer ' + pat,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    contentType: 'application/json',
+    payload: JSON.stringify(body),
+    muteHttpExceptions: true
+  };
+
+  const url = 'https://api.github.com/repos/' + repo + '/contents/' +
+              encodeURIComponent(path).replace(/%2F/g, '/');
+  try {
+    const resp = UrlFetchApp.fetch(url, opts);
+    const code = resp.getResponseCode();
+    if (code === 201) return {ok: true, path: path, commit: JSON.parse(resp.getContentText()).commit.sha};
+    Logger.log('GitHub commit failed: HTTP ' + code + ' — ' + resp.getContentText().substring(0, 400));
+    return {ok: false, reason: 'HTTP ' + code};
+  } catch (err) {
+    Logger.log('GitHub commit exception: ' + err);
+    return {ok: false, reason: String(err)};
+  }
+}
+
+
+/**
+ * Accept a POST with form fields. Appends one row to the active sheet
+ * AND commits one JSON file to the audit-trail repo.
  */
 function doPost(e) {
   try {
@@ -86,11 +159,17 @@ function doPost(e) {
     });
     sheet.appendRow(row);
 
+    // Best-effort: commit the same response to the audit-trail GitHub repo.
+    // This runs AFTER the Sheet write so participant data is never lost,
+    // even if GitHub is temporarily unreachable.
+    const audit = commitToGitHub_(sheet.getLastRow(), params);
+
     // Success response. The client looks for the confirmation marker.
     return ContentService
       .createTextOutput(JSON.stringify({
         status: 'ok',
         row: sheet.getLastRow(),
+        audit: audit,
         // Include Google's confirmation marker so existing client code that
         // checks for "freebirdFormviewerViewResponseConfirmationMessage" also
         // passes unchanged.
