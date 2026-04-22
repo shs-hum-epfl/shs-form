@@ -1053,12 +1053,9 @@ document.getElementById('final-submit').addEventListener('click', async () => {
   }
 
   const backendURL = getBackendURL();
-  if (backendURL === 'https://script.google.com/macros/s/AKfycbxmAmeQqDaAP1YKxRktGoLc1KEtg7TzWuVzOaJnRHSBJ6JOg-69AdIypsYcHp19wSDg/exec') {
-    status.className = 'submit-status err';
-    status.textContent = 'Backend URL not configured. Researcher: set APPS_SCRIPT_URL in the HTML.';
-    btn.disabled = false;
-    return;
-  }
+  // getBackendURL() always returns a usable URL now (Apps Script if
+  // configured, else same-origin /formResponse for local Flask dev).
+  // No sentinel check needed.
 
   // Compute and attach the completion time (minutes, 1 decimal) just
   // before submit, so the Sheet has a ready-to-use duration column.
