@@ -48,7 +48,9 @@ function doPost(e) {
     // Canonical column order (matches survey_form_preview.html entry.local_NN).
     // We lock this order so every row is aligned regardless of input order.
     const columns = [
-      'Timestamp',
+      'Timestamp',              // server clock when the row is written
+      'start_timestamp',        // ISO time the participant left the consent page
+      'completion_time_min',    // (submit - start) in minutes, 1 decimal
       'entry.local_01',  // consent
       'entry.local_02',  // age
       'entry.local_03',  // gender

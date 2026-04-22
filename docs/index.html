@@ -406,6 +406,12 @@
     3. Replace APPS_SCRIPT_URL below with that URL.
 -->
 <form id="survey-form" action="/formResponse" method="POST" novalidate>
+<!-- Duration tracking ── populated by JS.  `start_timestamp` is set when the
+     participant advances past the consent page; `completion_time_min` is
+     computed on submit. Both are sent as form fields and stored in the
+     Google Sheet alongside the responses. -->
+<input type="hidden" name="start_timestamp"     id="start-ts-field"   value="">
+<input type="hidden" name="completion_time_min" id="completion-field" value="">
 
 <!-- ═══════════════ Page 0 — Consent & intro ═══════════════ -->
 <div class="page active" data-page="0">
@@ -947,6 +953,10 @@ function showErr(el, n, msg) {
   }
 }
 
+// Duration tracking state — START_MS is set when the participant advances
+// past the consent page (i.e., when the real survey actually begins).
+let START_MS = null;
+
 function nextPage() {
   if (!validatePage(currentPage)) return;
 
@@ -954,6 +964,11 @@ function nextPage() {
   if (currentPage === 0) {
     const consent = document.querySelector('input[name="entry.local_01"]:checked');
     if (consent && consent.value === 'No') { showPage(DECLINED_PAGE); return; }
+    // Participant consented and is advancing → start the duration clock.
+    if (START_MS === null) {
+      START_MS = Date.now();
+      document.getElementById('start-ts-field').value = new Date(START_MS).toISOString();
+    }
   }
 
   if (currentPage < TOTAL_PAGES - 1) showPage(currentPage + 1);
@@ -1039,6 +1054,13 @@ document.getElementById('final-submit').addEventListener('click', async () => {
     status.textContent = 'Backend URL not configured. Researcher: set APPS_SCRIPT_URL in the HTML.';
     btn.disabled = false;
     return;
+  }
+
+  // Compute and attach the completion time (minutes, 1 decimal) just
+  // before submit, so the Sheet has a ready-to-use duration column.
+  if (START_MS !== null) {
+    const mins = (Date.now() - START_MS) / 60000;
+    document.getElementById('completion-field').value = mins.toFixed(1);
   }
 
   // Convert FormData to URL-encoded so Apps Script parses it cleanly via
