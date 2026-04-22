@@ -1,0 +1,61 @@
+# ═══════════════════════════════════════════════════════════════════════
+# .gitignore — slim public repo for the Colour Experience form.
+#
+# This repo only contains the files needed to DEPLOY the live form:
+#   - docs/index.html         (served by GitHub Pages)
+#   - apps_script_backend.gs  (backend code reference)
+#   - README.md
+#   - .gitignore
+#
+# Everything else (simulation pipeline, autocompiler, Flask server,
+# other-platform deploy configs, study documents, etc.) lives only on
+# the researcher's local disk and is never pushed.
+# ═══════════════════════════════════════════════════════════════════════
+
+# ── Local development files (not for public) ──────────────────────────
+file_shs_review/
+color_check/
+gith/
+local_form_server.py
+serve_public.py
+google_form_submitter.py
+sync_docs.py
+generate_pdf_guide.py
+generate_simulation_guide.py
+
+# ── Other-platform deploy configs (kept local in case we migrate) ──────
+Dockerfile
+Procfile
+requirements.txt
+requirements-server.txt
+runtime.txt
+fly.toml
+render.yaml
+
+# ── Internal / setup docs (not for public) ────────────────────────────
+DEPLOY.md
+CLOUD_DEPLOY.md
+GITHUB_PAGES_DEPLOY.md
+
+# ── Runtime / build artefacts ──────────────────────────────────────────
+local_responses.csv
+local_submit_log.json
+submitted_participants.json
+*.pdf
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+
+# ── OS / editor noise ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
+*.swp
+
+# ── Excel and data files ───────────────────────────────────────────────
+*.xlsx
+*.xlsm

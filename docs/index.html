@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colour Emotional Perception — Survey</title>
+<style>
+  /*
+   * COLOUR PALETTE — chosen for colour-perception research.
+   * Pages that show colour stimuli use a neutral MID-GREY surround
+   * (L* ≈ 50, hex ~#808080) so they do NOT bias chromatic adaptation
+   * of the visual system. This is the standard practice in colour-
+   * emotion studies (e.g., Song et al. 2025; Ou et al. 2004; CIE).
+   *
+   * Form / consent / screening pages use a light neutral grey for
+   * readability — still no hue, just a softer tone so text is comfy.
+   *
+   * UI accents (buttons, progress bar) kept low-chroma / near-neutral
+   * so that, during the rating task, no other coloured element is
+   * near the patch being judged.
+   */
+  :root {
+    --bg:          #E6E6E6;   /* UI pages — neutral light grey, no hue */
+    --bg-rating:   #808080;   /* rating pages — neutral mid-grey (L* ≈ 50) */
+    --card:        #FFFFFF;
+    --border:      #C8C8C8;
+    --text:        #1C1C1C;
+    --text-soft:   #555555;
+    --primary:     #2E2E2E;   /* near-black primary button */
+    --primary-hov: #111111;
+    --accent:      #5E5E5E;   /* mid-grey accent */
+    --accent-soft: #EDEDED;   /* hover tints */
+    --warn:        #B71C1C;
+    --success:     #2E7D32;   /* kept for the final submit button only */
+    --progress-a:  #4A4A4A;
+    --progress-b:  #7A7A7A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Google Sans', Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+
+  /* ── Top progress bar (sticky) ── */
+  .progress-shell {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--bg);
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .progress-shell .inner {
+    max-width: 820px; margin: 0 auto;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .progress-label {
+    font-size: 13px; color: var(--text-soft);
+    font-weight: 500; white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .progress-track {
+    flex: 1; height: 8px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 4px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--progress-a), var(--progress-b));
+    border-radius: 4px;
+    transition: width 0.35s ease;
+  }
+  .progress-pct {
+    font-size: 13px; color: var(--primary);
+    font-weight: 600; min-width: 46px; text-align: right;
+  }
+
+  /* ── Main page area ── */
+  .stage {
+    max-width: 820px; margin: 0 auto;
+    padding: 24px 20px 40px;
+  }
+
+  /* A 'page' is one step in the wizard. Only .active is visible. */
+  .page { display: none; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: var(--card); border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 28px 28px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card.header { border-top: 10px solid var(--primary); padding-top: 22px; }
+
+  h1 { font-size: 26px; line-height: 1.2; color: var(--text); margin-bottom: 6px; }
+  h2 { font-size: 19px; color: var(--primary); margin-bottom: 14px; }
+  h3 { font-size: 15px; color: var(--primary-hov); margin: 14px 0 6px; }
+  .subtitle { font-size: 14px; color: var(--text-soft); margin-bottom: 14px; }
+  .info { font-size: 14px; color: #444; }
+  .info p { margin-bottom: 10px; }
+  .info p:last-child { margin-bottom: 0; }
+  .question {
+    font-size: 15px; font-weight: 500; margin-bottom: 8px;
+  }
+  .required { color: var(--warn); }
+  .hint { font-size: 13px; color: #777; margin: 2px 0 10px; }
+
+  /* ── Form controls ── */
+  .option {
+    display: flex; align-items: flex-start;
+    padding: 10px 12px; margin: 4px 0;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .option:hover { background: var(--accent-soft); border-color: var(--border); }
+  .option input { margin-right: 12px; margin-top: 3px; flex-shrink: 0; transform: scale(1.1); }
+  .option label { flex: 1; cursor: pointer; }
+
+  select, .text-input, textarea {
+    font-family: inherit; font-size: 14px;
+    border: 1px solid #bbb; border-radius: 6px;
+    padding: 10px 12px;
+    background: #fff;
+    width: 100%; max-width: 360px;
+    transition: border-color 0.2s;
+  }
+  select:focus, .text-input:focus, textarea:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
+  }
+  textarea { width: 100%; max-width: none; min-height: 84px; resize: vertical; }
+
+  .consent-box {
+    background: #FFF8E1;
+    border: 1px solid #FFD54F;
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-size: 14px;
+    line-height: 1.65;
+    margin-top: 10px;
+  }
+  .consent-box p { margin-bottom: 10px; }
+  .consent-box p:last-child { margin-bottom: 0; }
+  .contact {
+    font-size: 13px; color: #444;
+    padding-top: 10px; border-top: 1px solid #eee;
+    margin-top: 12px;
+  }
+
+  .note-ta {
+    background: #E8F5E9; border-left: 4px solid #4CAF50;
+    padding: 10px 14px; border-radius: 4px;
+    font-size: 13px; color: #2E7D32;
+    margin-bottom: 14px;
+  }
+
+  /* ── RATING PAGE — the centerpiece of the wizard ──
+     Entire page is neutral MID-grey (L* ≈ 50) so it doesn't bias
+     colour perception of the swatch. Text is white for contrast.
+     No chromatic UI element is on the page — only the swatch. */
+  body.rating-mode { background: var(--bg-rating); }
+  body.rating-mode .progress-shell {
+    background: var(--bg-rating);
+    border-bottom-color: rgba(255,255,255,0.15);
+  }
+  body.rating-mode .progress-label,
+  body.rating-mode .progress-pct { color: #F0F0F0; }
+  body.rating-mode .progress-track { background: rgba(255,255,255,0.2); }
+  body.rating-mode .progress-fill {
+    background: linear-gradient(90deg, #F0F0F0, #D0D0D0);
+  }
+
+  .rating-page {
+    min-height: calc(100vh - 100px);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px 10px 10px;
+    color: #F0F0F0;
+  }
+  .rating-page.active { display: flex; }
+
+  .rating-meta {
+    color: rgba(255,255,255,0.75); font-size: 13px; margin-bottom: 6px;
+  }
+  .rating-block-label {
+    font-size: 17px; font-weight: 500; color: #fff;
+    margin-bottom: 12px; letter-spacing: 0.3px;
+  }
+  .rating-question {
+    font-size: 18px; font-weight: 500;
+    text-align: center;
+    margin-bottom: 6px;
+    max-width: 620px;
+    color: #FFFFFF;
+  }
+  .rating-plain {
+    font-size: 14px; color: rgba(255,255,255,0.85);
+    text-align: center; margin-bottom: 16px;
+    max-width: 540px; font-style: italic;
+  }
+
+  .big-swatch {
+    width: min(360px, 72vw);
+    height: min(280px, 40vh);
+    border-radius: 8px;
+    margin: 4px 0 22px;
+    border: 1px solid rgba(0,0,0,0.12);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.12);
+  }
+
+  .rating-sub {
+    font-size: 12px; color: rgba(255,255,255,0.75);
+    margin-bottom: 18px; letter-spacing: 0.3px;
+  }
+
+  .likert-big {
+    display: flex; gap: 8px;
+    margin-bottom: 10px;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .likert-big input {
+    position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;
+  }
+  .likert-big label { cursor: pointer; display: inline-block; }
+  .likert-big .likert-num {
+    display: flex; align-items: center; justify-content: center;
+    min-width: 64px; height: 62px;
+    padding: 0 10px;
+    border: 2px solid #D0D0D0;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: #555;
+    background: #fff;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .likert-big label:hover .likert-num {
+    border-color: #2E2E2E; color: #111;
+    transform: translateY(-1px);
+  }
+  .likert-big input:checked + .likert-num {
+    background: #1C1C1C; color: #fff; border-color: #1C1C1C;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+  .likert-big input:focus-visible + .likert-num {
+    outline: 3px solid rgba(255, 255, 255, 0.6); outline-offset: 2px;
+  }
+
+  .likert-anchors {
+    display: flex; justify-content: space-between;
+    width: min(560px, 90%);
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+    margin: 4px 0 20px;
+  }
+  .likert-anchors .anchor { white-space: nowrap; }
+
+  /* ── Navigation bar ── */
+  .nav {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 14px;
+    margin-top: 14px; padding: 14px 4px;
+  }
+  .rating-page .nav { width: min(600px, 95%); margin-top: 6px; }
+
+  .btn {
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    padding: 12px 28px;
+    border-radius: 8px; border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:focus { outline: 3px solid rgba(0, 0, 0, 0.25); outline-offset: 2px; }
+  .btn-next {
+    background: var(--primary); color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+  .btn-next:hover:not(:disabled) { background: var(--primary-hov); transform: translateY(-1px); }
+  .btn-next:disabled {
+    background: #bbb; color: #666; cursor: not-allowed;
+    box-shadow: none; transform: none;
+  }
+  .btn-prev {
+    background: transparent; color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+  .btn-prev:hover { background: var(--accent-soft); }
+  .btn-submit {
+    background: var(--success); color: #fff;
+    padding: 16px 40px; font-size: 16px;
+    box-shadow: 0 3px 10px rgba(46, 125, 50, 0.35);
+  }
+  .btn-submit:hover:not(:disabled) { background: #1B5E20; transform: translateY(-1px); }
+
+  /* Rating pages override the button colours so nothing coloured sits
+     near the swatch. All greys on mid-grey background. */
+  body.rating-mode .btn-next {
+    background: #FFFFFF; color: #1C1C1C;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  body.rating-mode .btn-next:hover:not(:disabled) { background: #F5F5F5; }
+  body.rating-mode .btn-next:disabled {
+    background: rgba(255,255,255,0.3); color: rgba(255,255,255,0.5);
+  }
+  body.rating-mode .btn-prev {
+    background: transparent; color: #F0F0F0;
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  body.rating-mode .btn-prev:hover { background: rgba(255,255,255,0.1); }
+
+  /* ── Special pages ── */
+  .big-final {
+    text-align: center; padding: 40px 24px;
+  }
+  .big-final h2 { font-size: 22px; margin-bottom: 20px; }
+
+  .submit-card {
+    background: var(--primary); color: #fff;
+    border-radius: 12px; padding: 32px 28px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+  .submit-card h2 { color: #fff; margin-bottom: 10px; }
+  .submit-card p { font-size: 14px; margin-bottom: 18px; opacity: 0.95; }
+  .submit-status {
+    margin-top: 20px; font-size: 15px; min-height: 24px; font-weight: 500;
+  }
+  .submit-status.ok { color: #C8E6C9; }
+  .submit-status.err { color: #FFCDD2; }
+
+  .thankyou-card {
+    background: #E8F5E9;
+    border: 2px solid #4CAF50;
+    border-radius: 12px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .thankyou-card h2 { color: var(--success); font-size: 26px; margin-bottom: 14px; }
+  .thankyou-card p { font-size: 15px; color: #333; margin-bottom: 10px; }
+  .checkmark {
+    font-size: 48px; color: var(--success); margin-bottom: 12px;
+  }
+
+  /* ── Error / validation message ── */
+  .validation-msg {
+    background: #FFEBEE; border-left: 3px solid var(--warn);
+    padding: 10px 14px; border-radius: 4px;
+    color: #B71C1C; font-size: 14px;
+    margin: 10px 0; display: none;
+  }
+  .validation-msg.shown { display: block; animation: fadeIn 0.2s; }
+
+  /* ── Small screens ── */
+  @media (max-width: 500px) {
+    .card { padding: 20px 18px; }
+    .btn { padding: 10px 18px; font-size: 14px; }
+    .likert-big label { min-width: 44px; font-size: 15px; padding: 12px 6px 10px; }
+    .likert-anchors { font-size: 12px; }
+    .big-swatch { height: 38vh; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ STICKY PROGRESS BAR ═══════════════ -->
+<div class="progress-shell">
+  <div class="inner">
+    <div class="progress-label" id="progress-label">Starting...</div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-pct" id="progress-pct">0%</div>
+  </div>
+</div>
+
+<div class="stage">
+<!--
+  FORM BACKEND CONFIGURATION
+  --------------------------
+  The form auto-detects where it is hosted and POSTs to the right backend:
+
+   • Served via the local Flask server (local_form_server.py)
+     or via ngrok tunnel → POST to /formResponse on the same origin.
+
+   • Served via GitHub Pages / Cloudflare Pages / any static host
+     → POST to the Google Apps Script web-app URL below.
+
+  TO CONFIGURE the Apps Script backend:
+    1. Deploy apps_script_backend.gs in Google Apps Script (instructions in
+       that file's header comment).
+    2. Copy the Web App URL it gives you.
+    3. Replace APPS_SCRIPT_URL below with that URL.
+-->
+<form id="survey-form" action="/formResponse" method="POST" novalidate>
+
+<!-- ═══════════════ Page 0 — Consent & intro ═══════════════ -->
+<div class="page active" data-page="0">
+  <div class="card header">
+    <h1>Colour Experience Study — Emotional Perception of Colours</h1>
+    <div class="subtitle">Experimental Cognitive Psychology · HUM 403 · EPFL / UNIL · 2025</div>
+    <div class="note-ta">You will see 80 colour patches one at a time. For each, rate how the colour feels to you on a scale from 1 to 7. The survey takes about <strong>20 minutes</strong>.</div>
+  </div>
+
+  <div class="card">
+    <h2>Consent &amp; data protection</h2>
+    <div class="consent-box">
+      <p>Look around at the room you're in. Have you ever wondered about the colours of your walls, furniture, other objects? Do you think they impact how you feel?</p>
+      <p>For more than 10 years, our research group has studied how people perceive and associate colours. This time, we aim to replicate and extend Song et al. (2025; <em>BMC Psychology</em>, 13:650) on the emotional valence of colours across university students from art programmes and from other fields.</p>
+      <p>If you agree to take part, you should spare about <strong>20 minutes</strong> of your time. Please complete the study in a quiet place. If possible, do <strong>not</strong> use your smartphone, because the colour patches may render differently on small displays.</p>
+      <p><strong>Data use.</strong> We will use the data for scientific purposes only, evaluated and published only in aggregated form. It will be impossible to identify individual participants in the data, publications, or presentations.</p>
+      <p><strong>Voluntary participation.</strong> Your participation is voluntary. You can stop at any time without giving reasons and without consequences. If the study is terminated prematurely, the data collected up to that point will be deleted.</p>
+      <p>By completing this survey, you agree that we can use your anonymous data for research.</p>
+      <div class="contact">
+        <strong>Contact.</strong> Research team at HUM 403 Experimental Cognitive Psychology, EPFL / UNIL (Lausanne, Switzerland).<br>
+        You can reach any of us:
+        <a href="mailto:mohammadhossein.nikkhahghomi@epfl.ch,giacomo.case@epfl.ch,aarav.desai@epfl.ch,luca.civilla@epfl.ch,afonso.decarvalhobandeira@epfl.ch?subject=Colour%20Experience%20Study">write to the whole team</a>,
+        or individually:
+        <br>
+        <a href="mailto:mohammadhossein.nikkhahghomi@epfl.ch">mohammadhossein.nikkhahghomi@epfl.ch</a> ·
+        <a href="mailto:giacomo.case@epfl.ch">giacomo.case@epfl.ch</a> ·
+        <a href="mailto:aarav.desai@epfl.ch">aarav.desai@epfl.ch</a> ·
+        <a href="mailto:luca.civilla@epfl.ch">luca.civilla@epfl.ch</a> ·
+        <a href="mailto:afonso.decarvalhobandeira@epfl.ch">afonso.decarvalhobandeira@epfl.ch</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="question">Do you agree to take part in the study? <span class="required">*</span></div>
+    <div class="hint">By choosing "Yes, let's start!" you confirm that you have read the information above, understand how your data is processed, and agree to participate.</div>
+    <label class="option"><input type="radio" name="entry.local_01" value="Yes, let's start!" required>Yes, let's start!</label>
+    <label class="option"><input type="radio" name="entry.local_01" value="No">No (the survey will end)</label>
+  </div>
+
+  <div class="validation-msg" data-page-err="0"></div>
+  <div class="nav">
+    <span></span>
+    <button type="button" class="btn btn-next" data-next>Start →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ Page 1 — Demographics part 1 ═══════════════ -->
+<div class="page" data-page="1">
+  <div class="card">
+    <h2>About you</h2>
+    <p class="hint">Step 1 of 2. Everything is anonymous.</p>
+
+    <div class="question" style="margin-top:14px;">Please state your age (in years). <span class="required">*</span></div>
+    <select name="entry.local_02" id="age-select" required></select>
+
+    <div class="question" style="margin-top:22px;">Gender <span class="required">*</span></div>
+    <label class="option"><input type="radio" name="entry.local_03" value="Female" required>Female</label>
+    <label class="option"><input type="radio" name="entry.local_03" value="Male">Male</label>
+    <label class="option"><input type="radio" name="entry.local_03" value="Nonbinary">Nonbinary</label>
+    <label class="option"><input type="radio" name="entry.local_03" value="Prefer not to say">Prefer not to say</label>
+
+    <div class="question" style="margin-top:22px;">In which school are you currently enrolled? <span class="required">*</span></div>
+    <label class="option"><input type="radio" name="entry.local_04" value="EPFL (École polytechnique fédérale de Lausanne)" required>EPFL (École polytechnique fédérale de Lausanne)</label>
+    <label class="option"><input type="radio" name="entry.local_04" value="ECAL (École cantonale d'art de Lausanne)">ECAL (École cantonale d'art de Lausanne)</label>
+    <label class="option"><input type="radio" name="entry.local_04" value="Other">Other</label>
+
+    <div class="question" style="margin-top:22px;">How many years of formal art or design training have you had? <span class="required">*</span></div>
+    <div class="hint">Enter 0 if none. Count only formal instruction (school, academy, university courses).</div>
+    <input type="number" class="text-input" name="entry.local_05" min="0" max="60" placeholder="e.g. 0, 3, 8" required>
+  </div>
+
+  <div class="validation-msg" data-page-err="1"></div>
+  <div class="nav">
+    <button type="button" class="btn btn-prev" data-prev>← Back</button>
+    <button type="button" class="btn btn-next" data-next>Next →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ Page 2 — Demographics part 2 ═══════════════ -->
+<div class="page" data-page="2">
+  <div class="card">
+    <h2>About you (continued)</h2>
+    <p class="hint">Step 2 of 2.</p>
+
+    <div class="question" style="margin-top:14px;">Have you completed or participated in any course that explained colour, colour theory, or the use of colour in design? <span class="required">*</span></div>
+    <div class="hint">For example: colour theory, visual composition, colour in art or design, colour science. Courses at university, art school, design school, or dedicated workshops count.</div>
+    <label class="option"><input type="radio" name="entry.local_06" value="No" required>No</label>
+    <label class="option"><input type="radio" name="entry.local_06" value="Yes">Yes</label>
+
+    <div class="question" style="margin-top:22px;">How often do you engage in art or design practice? <span class="required">*</span></div>
+    <div class="hint">Drawing, painting, design work, photography, etc.</div>
+    <label class="option"><input type="radio" name="entry.local_07" value="Daily" required>Daily</label>
+    <label class="option"><input type="radio" name="entry.local_07" value="Several times a week">Several times a week</label>
+    <label class="option"><input type="radio" name="entry.local_07" value="Once a week">Once a week</label>
+    <label class="option"><input type="radio" name="entry.local_07" value="A few times a month">A few times a month</label>
+    <label class="option"><input type="radio" name="entry.local_07" value="Rarely or never">Rarely or never</label>
+
+    <div class="question" style="margin-top:22px;">If you engage in art/design practice, please explain briefly how. <span style="color:#888; font-style:italic; font-weight:400;">Optional</span></div>
+    <div class="hint">Skip if not applicable. Medium, context, frequency.</div>
+    <textarea name="entry.local_08" placeholder="e.g. I paint in oil once a week; I do UI design as part of my coursework; analog photos on weekends..."></textarea>
+  </div>
+
+  <div class="validation-msg" data-page-err="2"></div>
+  <div class="nav">
+    <button type="button" class="btn btn-prev" data-prev>← Back</button>
+    <button type="button" class="btn btn-next" data-next>Next →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ Page 3 — Screening part 1 (CVD) ═══════════════ -->
+<div class="page" data-page="3">
+  <div class="card">
+    <h2>Colour vision</h2>
+    <p class="hint">Helps us ensure the task is appropriate for you. Responses remain anonymous.</p>
+
+    <div class="question" style="margin-top:14px;">Do you have any problems distinguishing colours in everyday life? <span class="required">*</span></div>
+    <div class="hint">For example, confusing red and green apples, or telling teal from navy.</div>
+    <label class="option"><input type="radio" name="entry.local_09" value="Never" required>Never</label>
+    <label class="option"><input type="radio" name="entry.local_09" value="Occasionally">Occasionally</label>
+    <label class="option"><input type="radio" name="entry.local_09" value="Often">Often</label>
+    <label class="option"><input type="radio" name="entry.local_09" value="Always">Always</label>
+
+    <div class="question" style="margin-top:22px;">Do you have any colour vision deficiency? If yes, what kind? <span class="required">*</span></div>
+    <div class="hint">If you have never been tested but have noticed problems, choose "Yes, but I don't know the type".</div>
+    <label class="option"><input type="radio" name="entry.local_10" value="No, I don't have any colour deficiency" required>No, I don't have any colour deficiency</label>
+    <label class="option"><input type="radio" name="entry.local_10" value="Yes, I have difficulty distinguishing red and green colours">Yes, I have difficulty distinguishing red and green colours (deuteranopia or protanopia)</label>
+    <label class="option"><input type="radio" name="entry.local_10" value="Yes, I have difficulty distinguishing blue and yellow colours">Yes, I have difficulty distinguishing blue and yellow colours (tritanopia)</label>
+    <label class="option"><input type="radio" name="entry.local_10" value="Yes, but I don't know the type">Yes, but I don't know the type</label>
+    <label class="option"><input type="radio" name="entry.local_10" value="Yes, other">Yes, other. Specify below.</label>
+    <input type="text" class="text-input" name="entry.local_10b" placeholder="If 'Yes, other', specify (optional)" style="margin-top:6px;">
+  </div>
+
+  <div class="validation-msg" data-page-err="3"></div>
+  <div class="nav">
+    <button type="button" class="btn btn-prev" data-prev>← Back</button>
+    <button type="button" class="btn btn-next" data-next>Next →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ Page 4 — Screening part 2 (mental health, display, device) ═══════════════ -->
+<div class="page" data-page="4">
+  <div class="card">
+    <h2>Wellbeing and setup</h2>
+
+    <div class="question" style="margin-top:14px;">Are you currently experiencing a condition that significantly affects your emotional responses? <span class="required">*</span></div>
+    <div class="hint">For example, clinical depression or severe anxiety. Your response remains anonymous.</div>
+    <label class="option"><input type="radio" name="entry.local_11" value="No" required>No</label>
+    <label class="option"><input type="radio" name="entry.local_11" value="Yes">Yes</label>
+    <label class="option"><input type="radio" name="entry.local_11" value="Prefer not to say">Prefer not to say</label>
+
+    <div class="question" style="margin-top:22px;">Display setup confirmation <span class="required">*</span></div>
+    <div class="hint">Both boxes must be checked before continuing.</div>
+    <label class="option"><input type="checkbox" name="entry.local_12" value="I confirm no software filters or physical screen covers" required>I confirm I am NOT using any software filters (blue light filter, Night Shift, f.lux, Night Light, dark mode colour overrides) or physical screen covers that could affect my colour perception.</label>
+    <label class="option"><input type="checkbox" name="entry.local_12b" value="I confirm screen brightness at maximum" required>I confirm my screen brightness is set to MAXIMUM.</label>
+
+    <div class="question" style="margin-top:22px;">Which device are you using to complete this experiment? <span class="required">*</span></div>
+    <div class="hint">A laptop or desktop is strongly recommended.</div>
+    <label class="option"><input type="radio" name="entry.local_13" value="Laptop or Desktop PC" required>Laptop or Desktop PC</label>
+    <label class="option"><input type="radio" name="entry.local_13" value="Tablet">Tablet</label>
+    <label class="option"><input type="radio" name="entry.local_13" value="Phone">Phone</label>
+  </div>
+
+  <div class="validation-msg" data-page-err="4"></div>
+  <div class="nav">
+    <button type="button" class="btn btn-prev" data-prev>← Back</button>
+    <button type="button" class="btn btn-next" data-next>Next →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ Page 5 — Rating instructions ═══════════════ -->
+<div class="page" data-page="5">
+  <div class="card">
+    <h2>How the rating task works</h2>
+    <div class="info">
+      <p>You will now see <strong>80 coloured patches, one at a time.</strong> Each patch appears on its own page.</p>
+
+      <h3 style="margin-top:18px;">What you have to do</h3>
+      <p>For each colour, rate its <strong>emotional valence</strong> on a scale from 1 to 7.</p>
+
+      <div style="background: #F5F5F5; border-left: 4px solid var(--primary); padding: 14px 18px; border-radius: 4px; margin: 10px 0 16px;">
+        <p style="margin:0;"><strong>What is "emotional valence"?</strong></p>
+        <p style="margin:8px 0 0;">In plain words: <strong>how positive or negative does the colour feel to you?</strong></p>
+        <ul style="margin: 8px 0 0 22px; line-height: 1.7;">
+          <li><strong>Positive</strong> feelings = pleasant, cheerful, uplifting, comforting, inviting.</li>
+          <li><strong>Negative</strong> feelings = unpleasant, gloomy, irritating, oppressive, uncomfortable.</li>
+          <li><strong>Neutral</strong> = you feel nothing particular either way.</li>
+        </ul>
+        <p style="margin: 10px 0 0;">Don't rate whether the colour is <em>pretty</em> or whether you <em>like it as a colour</em>. Rate the <strong>feeling</strong> it evokes in you right now.</p>
+      </div>
+
+      <p style="text-align:center; padding:8px 0; font-size:15px;">
+        <strong>1 = very negative · 4 = neutral · 7 = very positive</strong>
+      </p>
+
+      <h3 style="margin-top:18px;">A few things to remember</h3>
+      <ul style="margin-left: 22px; line-height: 1.8;">
+        <li>There are <strong>no right or wrong answers</strong>.</li>
+        <li><strong>Give your first impression.</strong> Don't overthink.</li>
+        <li><strong>Don't compare</strong> each colour to the one shown before. Judge each one on its own.</li>
+        <li>Please complete the study in <strong>one continuous session</strong>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button type="button" class="btn btn-prev" data-prev>← Back</button>
+    <button type="button" class="btn btn-next" data-next>Start rating colours →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ Pages 6-85 — 80 rating pages (generated by JS) ═══════════════ -->
+<!-- placeholder — buildRatingPages() inserts .rating-page divs here -->
+<div id="rating-pages-mount"></div>
+
+<!-- ═══════════════ Page 86 — Optional comment ═══════════════ -->
+<div class="page" data-page="86">
+  <div class="card">
+    <h2>Almost done. Optional feedback.</h2>
+    <div class="question" style="margin-top:10px;">Is there anything you would like to add about the emotions these colours evoked in you, or anything the 1 to 7 scale did not capture? <span style="color:#888; font-style:italic; font-weight:400;">Optional</span></div>
+    <div class="hint">Specific emotions, memories, cultural associations. Skip if you have nothing to add.</div>
+    <textarea name="entry.local_94" placeholder="Your thoughts (optional)..."></textarea>
+  </div>
+
+  <div class="nav" style="justify-content: flex-end;">
+    <button type="button" class="btn btn-next" data-next>Next →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ Page 87 — Review & submit ═══════════════ -->
+<div class="page" data-page="87">
+  <div class="submit-card">
+    <h2>Ready to submit?</h2>
+    <p>Your responses are complete. Clicking Submit will send them anonymously. You cannot edit them afterwards.</p>
+    <button type="button" class="btn btn-submit" id="final-submit">Submit my responses</button>
+    <div class="submit-status" id="submit-status"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ Page 88 — Thank you (post-submit) ═══════════════ -->
+<div class="page" data-page="88">
+  <div class="thankyou-card">
+    <div class="checkmark">✓</div>
+    <h2>Thank you for participating!</h2>
+    <p>Your responses have been recorded anonymously.</p>
+    <p style="color:#666; margin-top:16px; font-size:14px;">Colour Experience Research Group · HUM 403 · EPFL / UNIL · 2025</p>
+  </div>
+</div>
+
+<!-- ═══════════════ Page 89 — Declined consent ═══════════════ -->
+<div class="page" data-page="89">
+  <div class="card" style="text-align:center; padding: 50px 28px;">
+    <h2 style="color:#888;">Thanks for considering!</h2>
+    <p class="info" style="margin-top:10px;">You chose not to participate. No data has been collected. You may close this tab.</p>
+  </div>
+</div>
+
+</form>
+</div><!-- /.stage -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// STIMULI
+// ═══════════════════════════════════════════════════════════════════════
+const VALUE_STIMULI = [
+  {hue:"5Y",  level:"Low",  val:6, chr:4,  hex:"#a39461", origQ:14},
+  {hue:"5Y",  level:"High", val:9, chr:4,  hex:"#f4e6a9", origQ:15},
+  {hue:"5GY", level:"Low",  val:6, chr:4,  hex:"#8d9b67", origQ:16},
+  {hue:"5GY", level:"High", val:9, chr:4,  hex:"#dfecab", origQ:17},
+  {hue:"5G",  level:"Low",  val:6, chr:4,  hex:"#6ca086", origQ:18},
+  {hue:"5G",  level:"High", val:9, chr:4,  hex:"#b7f2d2", origQ:19},
+  {hue:"5BG", level:"Low",  val:6, chr:4,  hex:"#639f99", origQ:20},
+  {hue:"5BG", level:"High", val:9, chr:4,  hex:"#aef2e6", origQ:21},
+  {hue:"5B",  level:"Low",  val:6, chr:4,  hex:"#6b9ca9", origQ:22},
+  {hue:"5B",  level:"High", val:9, chr:4,  hex:"#b3effc", origQ:23},
+  {hue:"5PB", level:"Low",  val:5, chr:4,  hex:"#6c7b95", origQ:24},
+  {hue:"5PB", level:"High", val:8, chr:4,  hex:"#b9cbe5", origQ:25},
+  {hue:"5P",  level:"Low",  val:6, chr:4,  hex:"#9f8fa9", origQ:26},
+  {hue:"5P",  level:"High", val:9, chr:4,  hex:"#eddffd", origQ:27},
+  {hue:"5RP", level:"Low",  val:5, chr:4,  hex:"#96707d", origQ:28},
+  {hue:"5RP", level:"High", val:8, chr:4,  hex:"#e5c0cb", origQ:29},
+  {hue:"5R",  level:"Low",  val:5, chr:4,  hex:"#9c6f6d", origQ:30},
+  {hue:"5R",  level:"High", val:8, chr:4,  hex:"#edbfbb", origQ:31},
+  {hue:"5YR", level:"Low",  val:5, chr:4,  hex:"#997259", origQ:32},
+  {hue:"5YR", level:"High", val:8, chr:4,  hex:"#ebc2a4", origQ:33},
+];
+const CHROMA_STIMULI = [
+  {hue:"5Y",  level:"Low",  val:7, chr:4,  hex:"#beaf79", origQ:34},
+  {hue:"5Y",  level:"High", val:7, chr:10, hex:"#cdad0e", origQ:35},
+  {hue:"5GY", level:"Low",  val:7, chr:4,  hex:"#a7b57f", origQ:36},
+  {hue:"5GY", level:"High", val:7, chr:10, hex:"#9bbc26", origQ:37},
+  {hue:"5G",  level:"Low",  val:7, chr:4,  hex:"#86ba9f", origQ:38},
+  {hue:"5G",  level:"High", val:7, chr:10, hex:"#18c78e", origQ:39},
+  {hue:"5BG", level:"Low",  val:7, chr:2,  hex:"#97b5b0", origQ:40},
+  {hue:"5BG", level:"High", val:7, chr:8,  hex:"#29c3b6", origQ:41},
+  {hue:"5B",  level:"Low",  val:7, chr:2,  hex:"#9cb3b9", origQ:42},
+  {hue:"5B",  level:"High", val:7, chr:8,  hex:"#3bbedb", origQ:43},
+  {hue:"5PB", level:"Low",  val:7, chr:4,  hex:"#9fb0c9", origQ:44},
+  {hue:"5PB", level:"High", val:7, chr:10, hex:"#77b2f9", origQ:45},
+  {hue:"5P",  level:"Low",  val:7, chr:8,  hex:"#c3a2da", origQ:46},
+  {hue:"5P",  level:"High", val:7, chr:14, hex:"#d693fd", origQ:47},
+  {hue:"5RP", level:"Low",  val:7, chr:4,  hex:"#caa5b1", origQ:48},
+  {hue:"5RP", level:"High", val:7, chr:10, hex:"#f391b5", origQ:49},
+  {hue:"5R",  level:"Low",  val:7, chr:2,  hex:"#bfaaa9", origQ:50},
+  {hue:"5R",  level:"High", val:7, chr:8,  hex:"#f19791", origQ:51},
+  {hue:"5YR", level:"Low",  val:7, chr:6,  hex:"#dda377", origQ:52},
+  {hue:"5YR", level:"High", val:7, chr:12, hex:"#fc9633", origQ:53},
+];
+const HUE_HEX = {
+  R:  ["#cfa5a5","#d1a4a1","#d2a49c","#d2a596"],
+  YR: ["#d2a691","#d0a78b","#cda886","#c9aa80"],
+  Y:  ["#c4ac7c","#beaf79","#b9b078","#b5b278"],
+  GY: ["#aeb47b","#a7b57f","#9db787","#94b98f"],
+  G:  ["#8cba98","#86ba9f","#84bba4","#81bba8"],
+  BG: ["#80baac","#7ebab2","#7dbab7","#7db9bc"],
+  B:  ["#80b8c0","#85b7c4","#8ab6c6","#91b4c7"],
+  PB: ["#99b2c9","#9fb0c9","#a7aec9","#aeacc8"],
+  P:  ["#b4aac6","#b8a9c4","#bfa8bf","#c3a7bb"],
+  RP: ["#c7a6b6","#caa5b1","#cca5ad","#cea5a9"],
+};
+const HUE_ORDER = ["R","YR","Y","GY","G","BG","B","PB","P","RP"];
+const HUE_POS = ["2.5","5","7.5","10"];
+const HUE_STIMULI = [];
+(() => {
+  let q = 54;
+  HUE_ORDER.forEach(h => HUE_POS.forEach((p, i) => {
+    HUE_STIMULI.push({hue:h, variant:i+1, pos:p, hex:HUE_HEX[h][i], origQ:q++, val:7, chr:4});
+  }));
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+// Age dropdown
+// ═══════════════════════════════════════════════════════════════════════
+(() => {
+  // Age range locked to the university-student window (18–33).
+  // Matches the simulation (ECAL: 18-30, EPFL: 18-33) and the TA's
+  // two-digit restriction. Anything outside is extremely rare for
+  // this population and would only introduce data-quality noise.
+  const sel = document.getElementById('age-select');
+  const blank = document.createElement('option');
+  blank.value = ''; blank.textContent = '— select —';
+  sel.appendChild(blank);
+  for (let a = 18; a <= 33; a++) {
+    const o = document.createElement('option');
+    o.value = a; o.textContent = a;
+    sel.appendChild(o);
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+// Seeded shuffle (Mulberry32) — per-session seed means each participant
+// sees a different order.
+// ═══════════════════════════════════════════════════════════════════════
+function shuffleSeeded(array, seed) {
+  let t = seed >>> 0;
+  const rnd = () => {
+    t = (t + 0x6D2B79F5) >>> 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+  const a = array.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Build rating pages — one <div class="page rating-page"> per patch
+// ═══════════════════════════════════════════════════════════════════════
+function buildRatingPages() {
+  const seed = Math.floor(Math.random() * 1_000_000);
+  const vSh = shuffleSeeded(VALUE_STIMULI,  seed + 1);
+  const cSh = shuffleSeeded(CHROMA_STIMULI, seed + 2);
+  const hSh = shuffleSeeded(HUE_STIMULI,    seed + 3);
+
+  const mount = document.getElementById('rating-pages-mount');
+  // Munsell-standard block names (Hue / Value / Chroma). No synonyms.
+  const all = [
+    ...vSh.map(s => ({...s, block: "Value"})),
+    ...cSh.map(s => ({...s, block: "Chroma"})),
+    ...hSh.map(s => ({...s, block: "Hue"})),
+  ];
+
+  all.forEach((s, idx) => {
+    const pageNum = 6 + idx;           // pages 6..85
+    const itemNum = idx + 1;           // 1..80
+    const blockIdx = idx < 20 ? idx + 1 : idx < 40 ? idx - 19 : idx - 39;
+    const blockTotal = s.block === "Hue" ? 40 : 20;
+
+    const entryName = "entry.local_" + String(s.origQ).padStart(2, "0");
+
+    const pageEl = document.createElement('div');
+    pageEl.className = 'page rating-page';
+    pageEl.dataset.page = pageNum;
+    pageEl.innerHTML = `
+      <div class="rating-meta">Colour ${itemNum} of 80</div>
+      <div class="rating-question">Please rate the emotional valence of this colour <span class="required">*</span></div>
+      <div class="rating-plain">How positive or negative does this colour feel to you?</div>
+      <div class="big-swatch" style="background:${s.hex};" aria-label="colour swatch"></div>
+      <div class="likert-big" role="radiogroup" aria-label="Rating">
+        ${[1,2,3,4,5,6,7].map(i => `
+          <label>
+            <input type="radio" name="${entryName}" value="${i}" required data-rating>
+            <span class="likert-num">${i}</span>
+          </label>
+        `).join('')}
+      </div>
+      <div class="likert-anchors">
+        <span class="anchor">← very negative</span>
+        <span class="anchor">neutral</span>
+        <span class="anchor">very positive →</span>
+      </div>
+      <div class="validation-msg" data-page-err="${pageNum}"></div>
+      <div class="nav" style="justify-content: flex-end;">
+        <button type="button" class="btn btn-next" data-next disabled>Next →</button>
+      </div>
+    `;
+    mount.appendChild(pageEl);
+  });
+}
+buildRatingPages();
+
+// Auto-enable Next on a rating page as soon as the participant picks a score
+document.querySelectorAll('.rating-page input[type=radio]').forEach(r => {
+  r.addEventListener('change', () => {
+    const nextBtn = r.closest('.rating-page').querySelector('[data-next]');
+    if (nextBtn) nextBtn.disabled = false;
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// WIZARD NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════
+const TOTAL_PAGES = 90;          // 0..89
+const FIRST_RATING_PAGE = 6;
+const LAST_RATING_PAGE  = 85;
+const COMMENT_PAGE      = 86;
+const SUBMIT_PAGE       = 87;
+const THANKS_PAGE       = 88;
+const DECLINED_PAGE     = 89;
+
+let currentPage = 0;
+
+function pageEl(n) {
+  return document.querySelector(`.page[data-page="${n}"]`);
+}
+
+function showPage(n) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = pageEl(n);
+  if (!el) return;
+  el.classList.add('active');
+  currentPage = n;
+  // Switch body theme: rating pages use neutral mid-grey surround
+  if (n >= FIRST_RATING_PAGE && n <= LAST_RATING_PAGE) {
+    document.body.classList.add('rating-mode');
+  } else {
+    document.body.classList.remove('rating-mode');
+  }
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  updateProgress();
+  // Auto-focus first actionable element
+  setTimeout(() => {
+    const first = el.querySelector('input:not([type=hidden]), select, textarea, button[data-next]:not(:disabled)');
+    if (first && first.type !== 'radio' && first.type !== 'checkbox') first.focus();
+  }, 80);
+}
+
+function updateProgress() {
+  const fill  = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  const pct   = document.getElementById('progress-pct');
+  let pctVal = 0, lbl = '';
+
+  if (currentPage === 0)        { pctVal = 0;   lbl = 'Consent'; }
+  else if (currentPage <= 2)    { pctVal = 3;   lbl = `About you — step ${currentPage} of 2`; }
+  else if (currentPage <= 4)    { pctVal = 8;   lbl = `Screening ${currentPage - 2} of 2`; }
+  else if (currentPage === 5)   { pctVal = 11;  lbl = 'Rating instructions'; }
+  else if (currentPage >= FIRST_RATING_PAGE && currentPage <= LAST_RATING_PAGE) {
+    const idx = currentPage - FIRST_RATING_PAGE + 1;  // 1..80
+    pctVal = 12 + Math.round((idx / 80) * 82);       // 12..94
+    lbl = `Colour ${idx} of 80`;
+  }
+  else if (currentPage === COMMENT_PAGE) { pctVal = 96; lbl = 'Optional feedback'; }
+  else if (currentPage === SUBMIT_PAGE)  { pctVal = 99; lbl = 'Review &amp; submit'; }
+  else if (currentPage === THANKS_PAGE)  { pctVal = 100; lbl = 'Done — thank you!'; }
+  else if (currentPage === DECLINED_PAGE){ pctVal = 0;  lbl = 'Survey declined'; }
+
+  fill.style.width = pctVal + '%';
+  label.innerHTML = lbl;
+  pct.textContent = pctVal + '%';
+}
+
+function validatePage(n) {
+  const el = pageEl(n);
+  if (!el) return true;
+  const errSlot = el.querySelector(`[data-page-err="${n}"]`);
+  if (errSlot) { errSlot.textContent = ''; errSlot.classList.remove('shown'); }
+
+  const requiredInputs = el.querySelectorAll('[required]');
+  // Group radio requireds by name — only one per group matters
+  const radioNames = new Set();
+  for (const inp of requiredInputs) {
+    if (inp.type === 'radio') radioNames.add(inp.name);
+  }
+  for (const name of radioNames) {
+    const group = el.querySelectorAll(`input[name="${name}"]`);
+    const checked = Array.from(group).some(i => i.checked);
+    if (!checked) {
+      showErr(el, n, "Please select an answer before continuing.");
+      return false;
+    }
+  }
+  for (const inp of requiredInputs) {
+    if (inp.type === 'radio') continue;   // handled above
+    if (inp.type === 'checkbox') {
+      if (!inp.checked) {
+        showErr(el, n, "Please tick the required confirmation boxes.");
+        return false;
+      }
+    } else if (!inp.value.trim()) {
+      showErr(el, n, "Please fill in all required fields.");
+      inp.focus();
+      return false;
+    }
+  }
+  return true;
+}
+
+function showErr(el, n, msg) {
+  const slot = el.querySelector(`[data-page-err="${n}"]`);
+  if (slot) {
+    slot.textContent = msg;
+    slot.classList.add('shown');
+    slot.scrollIntoView({block: 'center', behavior: 'smooth'});
+  }
+}
+
+function nextPage() {
+  if (!validatePage(currentPage)) return;
+
+  // Special: if consent page and they chose 'No', jump to declined page
+  if (currentPage === 0) {
+    const consent = document.querySelector('input[name="entry.local_01"]:checked');
+    if (consent && consent.value === 'No') { showPage(DECLINED_PAGE); return; }
+  }
+
+  if (currentPage < TOTAL_PAGES - 1) showPage(currentPage + 1);
+}
+
+function prevPage() {
+  // Back navigation is allowed ONLY on the pre-rating pages (consent,
+  // demographics, screening, instructions). Once a participant starts
+  // rating colours, there is no going back — this protects the data
+  // against order-bias artefacts and against re-seeing previously
+  // rated swatches.
+  if (currentPage >= FIRST_RATING_PAGE) return;
+  if (currentPage === THANKS_PAGE || currentPage === DECLINED_PAGE) return;
+  if (currentPage > 0) showPage(currentPage - 1);
+}
+
+// Wire up nav buttons
+document.addEventListener('click', (e) => {
+  if (e.target.matches('[data-next]')) nextPage();
+  else if (e.target.matches('[data-prev]')) prevPage();
+});
+
+// Keyboard: Enter = next (unless in a textarea)
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+    e.preventDefault();
+    const page = pageEl(currentPage);
+    const nextBtn = page?.querySelector('[data-next]');
+    if (nextBtn && !nextBtn.disabled) nextBtn.click();
+  }
+  if (e.key === 'ArrowRight' && e.ctrlKey) nextPage();
+  if (e.key === 'ArrowLeft'  && e.ctrlKey) prevPage();
+});
+
+// Initialise
+showPage(0);
+
+// ═══════════════════════════════════════════════════════════════════════
+// BACKEND ROUTING
+// The form works against two possible backends:
+//   • Local / ngrok  → Flask server (local_form_server.py) on same origin
+//   • GitHub Pages  → Google Apps Script (apps_script_backend.gs)
+// Replace APPS_SCRIPT_URL with the Web App URL from your deployed script.
+// ═══════════════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmAmeQqDaAP1YKxRktGoLc1KEtg7TzWuVzOaJnRHSBJ6JOg-69AdIypsYcHp19wSDg/exec";
+
+function getBackendURL() {
+  // If we're on localhost or an ngrok tunnel pointing at Flask,
+  // the form.action value ("/formResponse" on same origin) is correct.
+  const host = location.hostname;
+  const onSameOriginFlask =
+    host === 'localhost' || host === '127.0.0.1' ||
+    host.endsWith('.ngrok-free.app') || host.endsWith('.ngrok.io') ||
+    host.endsWith('.onrender.com') || host.endsWith('.fly.dev') ||
+    host.endsWith('.pythonanywhere.com');
+  if (onSameOriginFlask) return location.origin + '/formResponse';
+  // Otherwise assume static host (GitHub Pages etc.) → Apps Script.
+  return APPS_SCRIPT_URL;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SUBMIT (final page)
+// ═══════════════════════════════════════════════════════════════════════
+document.getElementById('final-submit').addEventListener('click', async () => {
+  const btn = document.getElementById('final-submit');
+  const status = document.getElementById('submit-status');
+  const form = document.getElementById('survey-form');
+
+  status.className = 'submit-status';
+  status.textContent = 'Submitting...';
+  btn.disabled = true;
+
+  if (location.protocol === 'file:') {
+    status.className = 'submit-status err';
+    status.textContent = 'Offline preview — nothing to submit. Run local_form_server.py or deploy to a host to see the real submission flow.';
+    btn.disabled = false;
+    return;
+  }
+
+  const backendURL = getBackendURL();
+  if (backendURL === 'https://script.google.com/macros/s/AKfycbxmAmeQqDaAP1YKxRktGoLc1KEtg7TzWuVzOaJnRHSBJ6JOg-69AdIypsYcHp19wSDg/exec') {
+    status.className = 'submit-status err';
+    status.textContent = 'Backend URL not configured. Researcher: set APPS_SCRIPT_URL in the HTML.';
+    btn.disabled = false;
+    return;
+  }
+
+  // Convert FormData to URL-encoded so Apps Script parses it cleanly via
+  // e.parameter. Flask also accepts this format, so it works for both.
+  const fd = new FormData(form);
+  const params = new URLSearchParams();
+  for (const [k, v] of fd.entries()) params.append(k, v);
+
+  try {
+    const r = await fetch(backendURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+      redirect: 'follow',
+    });
+    const t = await r.text();
+    // Both backends include the confirmation marker in the response body.
+    // Flask emits the classic Google-Forms-style marker; Apps Script
+    // returns JSON with the same key set to true.
+    if (t.includes('freebirdFormviewerViewResponseConfirmationMessage') || r.ok) {
+      showPage(THANKS_PAGE);
+    } else {
+      status.className = 'submit-status err';
+      status.textContent = 'Submission received but unconfirmed. Please contact the researcher.';
+      btn.disabled = false;
+    }
+  } catch (err) {
+    status.className = 'submit-status err';
+    status.textContent = 'Network error: ' + err.message;
+    btn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
