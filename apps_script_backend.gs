@@ -200,15 +200,25 @@ function doPost(e) {
  * Once authorized, the main doPost flow will silently succeed every time.
  */
 function authorizeAuditTrail() {
+  // FIRST call to UrlFetchApp.fetch is intentionally OUTSIDE any try/catch.
+  // This lets the "external_request" permission error propagate up, which
+  // is what triggers Google's permission-consent popup the first time.
+  // Once you click Allow, this exact line will succeed on the second run.
+  const pingResp = UrlFetchApp.fetch('https://api.github.com/zen');
+  Logger.log('UrlFetchApp authorized. GitHub responded: ' +
+             pingResp.getContentText());
+
+  // Now that we have the scope, try a real commit against the data repo.
   const result = commitToGitHub_(-1, {_authorization_test: new Date().toISOString()});
-  Logger.log('Audit connection test: ' + JSON.stringify(result));
+  Logger.log('Test commit result: ' + JSON.stringify(result));
   if (result.ok) {
     SpreadsheetApp.getActiveSpreadsheet()
-      .toast('Audit trail authorized. Commit SHA: ' + result.commit.substring(0, 7),
-             'Setup complete', 8);
+      .toast('Audit trail working. Commit SHA: ' + result.commit.substring(0, 7),
+             'Setup complete', 10);
   } else {
     SpreadsheetApp.getActiveSpreadsheet()
-      .toast('Audit failed: ' + result.reason, 'Setup FAILED', 15);
+      .toast('Permission OK but commit failed: ' + result.reason,
+             'Check GITHUB_PAT', 15);
   }
   return result;
 }
