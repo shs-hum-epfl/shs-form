@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Colour Emotional Perception — Survey</title>
 <style>
   /*
@@ -1016,17 +1019,18 @@ showPage(0);
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmAmeQqDaAP1YKxRktGoLc1KEtg7TzWuVzOaJnRHSBJ6JOg-69AdIypsYcHp19wSDg/exec";
 
 function getBackendURL() {
-  // If we're on localhost or an ngrok tunnel pointing at Flask,
-  // the form.action value ("/formResponse" on same origin) is correct.
-  const host = location.hostname;
-  const onSameOriginFlask =
-    host === 'localhost' || host === '127.0.0.1' ||
-    host.endsWith('.ngrok-free.app') || host.endsWith('.ngrok.io') ||
-    host.endsWith('.onrender.com') || host.endsWith('.fly.dev') ||
-    host.endsWith('.pythonanywhere.com');
-  if (onSameOriginFlask) return location.origin + '/formResponse';
-  // Otherwise assume static host (GitHub Pages etc.) → Apps Script.
-  return APPS_SCRIPT_URL;
+  // If an Apps Script URL is configured, always use it regardless of
+  // where the form is being served from. This is the single reliable
+  // path — it works from GitHub Pages, localhost, file://, ngrok, etc.
+  // (Previously we routed localhost → Flask, but that caused confusion
+  //  when people opened a cached copy of the form locally.)
+  if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'REPLACE_WITH_YOUR_APPS_SCRIPT_WEB_APP_URL') {
+    return APPS_SCRIPT_URL;
+  }
+  // Fall back to same-origin /formResponse — only reaches this path when
+  // the form is being used against a local Flask dev server BEFORE the
+  // researcher has wired up an Apps Script backend.
+  return location.origin + '/formResponse';
 }
 
 // ═══════════════════════════════════════════════════════════════════════
