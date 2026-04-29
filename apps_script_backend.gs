@@ -38,22 +38,6 @@
  */
 
 /**
- * ═══════════════════════════════════════════════════════════════════════
- * AUDIT TRAIL — after appending to the Sheet, also commit one JSON file
- * per submission to a separate GitHub repository. Each commit is
- * cryptographically chained + GitHub-timestamped, so the repo is an
- * immutable append-only log. See shs-hum-epfl/shs-form-data for docs.
- *
- * Configured via Script Properties (Project Settings → Script Properties):
- *   GITHUB_PAT        — fine-grained personal access token with
- *                       "Contents: write" scope on the data repo only.
- *   GITHUB_REPO       — owner/repo, e.g. "shs-hum-epfl/shs-form-data"
- *                       (optional; defaults to this value below).
- *
- * If GITHUB_PAT is missing or the request fails, the submission is STILL
- * written to the Sheet (best effort — participant experience unaffected).
- * Failures are logged to Apps Script's built-in execution log.
- * ═══════════════════════════════════════════════════════════════════════
  */
 function commitToGitHub_(rowNumber, params) {
   const props = PropertiesService.getScriptProperties();
