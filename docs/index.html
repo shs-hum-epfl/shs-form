@@ -750,19 +750,22 @@ const HUE_STIMULI = [];
 // Age dropdown
 // ═══════════════════════════════════════════════════════════════════════
 (() => {
-  // Age range locked to the university-student window (18–33).
-  // Matches the simulation (ECAL: 18-30, EPFL: 18-33) and the TA's
-  // two-digit restriction. Anything outside is extremely rare for
-  // this population and would only introduce data-quality noise.
+  // Age dropdown: 18..40 plus an open-ended "more than 40" bucket so the
+  // rare older-student outliers can still answer truthfully. Anything
+  // labelled "more than 40" will be coerced to NaN by convert_google_forms.py
+  // and excluded from age-based summaries (still counted for ratings).
   const sel = document.getElementById('age-select');
   const blank = document.createElement('option');
   blank.value = ''; blank.textContent = '— select —';
   sel.appendChild(blank);
-  for (let a = 18; a <= 33; a++) {
+  for (let a = 18; a <= 40; a++) {
     const o = document.createElement('option');
     o.value = a; o.textContent = a;
     sel.appendChild(o);
   }
+  const over = document.createElement('option');
+  over.value = 'more than 40'; over.textContent = 'more than 40';
+  sel.appendChild(over);
 })();
 
 // ═══════════════════════════════════════════════════════════════════════
